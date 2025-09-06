@@ -4,8 +4,15 @@ import numpy as np
 # Web Camera
 cap = cv2.VideoCapture('video.mp4')
 count_line_position = 550
+# Minimum width and height for vehicle detection
 min_width_react = 80
 min_height_react = 80
+
+# Size thresholds for vehicle classification (in pixels)
+SMALL_MAX_WIDTH = 120
+SMALL_MAX_HEIGHT = 120
+MEDIUM_MAX_WIDTH = 200
+MEDIUM_MAX_HEIGHT = 200
 # Intialize Substructor
 algo = cv2.bgsegm.createBackgroundSubtractorMOG()
 
@@ -18,7 +25,12 @@ def center_handle(x,y,w,h):
 
 detect=[]
 offset =6 # Allowable error between pixel
-counter =0
+
+# Counters for each vehicle type
+small_vehicle_count = 0
+medium_vehicle_count = 0
+large_vehicle_count = 0
+counter = 0  # total
 
 while True:
     ret,frame1=cap.read()
@@ -39,19 +51,44 @@ while True:
         if not validate_counter:
             continue
         cv2.rectangle(frame1,(x,y),(x+w,y+h),(0,255,0),2)
-        cv2.putText(frame1,"VEHICLE :"+str(counter),(x,y-20),cv2.FONT_HERSHEY_TRIPLEX,1,(255,244,0),2)
+
+        # Classify vehicle size
+        if w <= SMALL_MAX_WIDTH and h <= SMALL_MAX_HEIGHT:
+            vehicle_type = 'Small'
+            color = (255, 255, 0)
+        elif w <= MEDIUM_MAX_WIDTH and h <= MEDIUM_MAX_HEIGHT:
+            vehicle_type = 'Medium'
+            color = (0, 255, 255)
+        else:
+            vehicle_type = 'Large'
+            color = (255, 0, 255)
+
+        cv2.putText(frame1, f"{vehicle_type} Vehicle", (x, y-20), cv2.FONT_HERSHEY_TRIPLEX, 1, color, 2)
 
         center = center_handle(x,y,w,h)
-        detect.append(center)
+        detect.append((center, vehicle_type))
         cv2.circle(frame1,center,4,(0,0,255),-1)
 
-        for(x,y) in detect:
-            if y<(count_line_position+offset) and y>(count_line_position-offset):
-                counter+=1
-                cv2.line(frame1,(25,count_line_position),(1200,count_line_position),(0,127,255),3)
-                detect.remove((x,y))
-                print("vehicle counter:"+str(counter))
-    cv2.putText(frame1,"VEHICLE COUNTER:"+str(counter),(450,70),cv2.FONT_HERSHEY_COMPLEX,2,(0,0,255),5)
+    # Count vehicles by type when they cross the line
+    for (center, vtype) in detect[:]:
+        cx, cy = center
+        if cy < (count_line_position+offset) and cy > (count_line_position-offset):
+            counter += 1
+            if vtype == 'Small':
+                small_vehicle_count += 1
+            elif vtype == 'Medium':
+                medium_vehicle_count += 1
+            else:
+                large_vehicle_count += 1
+            cv2.line(frame1,(25,count_line_position),(1200,count_line_position),(0,127,255),3)
+            detect.remove((center, vtype))
+            print(f"vehicle counter: {counter} | Small: {small_vehicle_count} | Medium: {medium_vehicle_count} | Large: {large_vehicle_count}")
+
+    # Display counters for each vehicle type
+    cv2.putText(frame1, f"Total: {counter}", (450, 70), cv2.FONT_HERSHEY_COMPLEX, 2, (0,0,255), 5)
+    cv2.putText(frame1, f"Small: {small_vehicle_count}", (50, 70), cv2.FONT_HERSHEY_COMPLEX, 1, (255,255,0), 2)
+    cv2.putText(frame1, f"Medium: {medium_vehicle_count}", (50, 120), cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,255), 2)
+    cv2.putText(frame1, f"Large: {large_vehicle_count}", (50, 170), cv2.FONT_HERSHEY_COMPLEX, 1, (255,0,255), 2)
 
 
     cv2.imshow('Video',frame1)
