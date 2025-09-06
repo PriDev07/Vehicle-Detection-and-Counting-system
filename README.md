@@ -45,5 +45,31 @@ This project demonstrates vehicle detection and counting in a video using OpenCV
   ```
 - Adjust `count_line_position`, `min_width_react`, and `min_height_react` for different video perspectives or vehicle sizes.
 
+## Vehicle Classification
+
+Vehicles are classified into three types based on their size:
+- **Small**
+- **Medium**
+- **Large**
+
+The script displays counters for each type in real time.
+
+## Using a Webcam
+
+To use your computer's webcam instead of a video file, change the following line in `vehicle.py`:
+```python
+cap = cv2.VideoCapture(0)
+```
+
+## Exiting the Program
+
+To exit the video window, press the **Enter** key.
+
+## Troubleshooting
+
+- If the video window does not appear or only shows a black screen, check that `video.mp4` exists and is a valid video file.
+- For webcam issues, ensure your camera is connected and accessible.
+- If you see errors or nothing happens, run the script from the terminal and check for error messages.
+
 ## License
 This project is for educational purposes.
